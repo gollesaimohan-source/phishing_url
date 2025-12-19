@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Phishing URL Detection</title>
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Phishing URL Detection</h1>
+
+        <input 
+            type="text" 
+            id="urlInput" 
+            placeholder="Enter URL to check"
+        >
+
+        <button onclick="checkURL()">Check URL</button>
+
+        <div id="result"></div>
+        <div class="risk-container">
+    <div class="risk-label">Threat Level</div>
+    <div class="risk-bar">
+        <div id="riskFill"></div>
+    </div>
+</div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

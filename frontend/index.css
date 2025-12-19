@@ -1,0 +1,78 @@
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: rgb(161, 178, 235);
+   
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+
+}
+
+.container {
+    background: #ffffff;
+    width: 420px;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+h1 {
+    margin-bottom: 20px;
+    color: #203a43;
+}
+
+input {
+    width: 92%;
+    padding: 10px;
+    font-size: 15px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+button {
+    margin-top: 15px;
+    width: 50%;
+    padding: 12px;
+    font-size: 15px;
+    background: #036a44;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #40b86a;
+}
+
+#result {
+    margin-top: 20px;
+    font-size: 18px;
+}
+.risk-container {
+    margin-top: 20px;
+    text-align: left;
+}
+
+.risk-label {
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.risk-bar {
+    width: 100%;
+    height: 20px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+#riskFill {
+    height: 100%;
+    width: 0%;
+    background: green;
+    transition: width 0.5s ease;
+}
