@@ -1,78 +1,135 @@
+/* Student Project Theme: Clean, Dark, Modern */
+:root {
+    --primary: #4e54c8;
+    --secondary: #8f94fb;
+    --bg-color: #1a1a2e;
+    --card-bg: #16213e;
+    --text-color: #e94560;
+    --text-light: #f5f5f5;
+    --success: #0f3460;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
 body {
-    font-family: "Segoe UI", Arial, sans-serif;
-    background-color: rgb(161, 178, 235);
-   
-    height: 100vh;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, var(--bg-color), #0f3460);
+    color: var(--text-light);
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0;
-
 }
 
-.container {
-    background: #ffffff;
-    width: 420px;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 20px 30px rgba(0, 0, 0, 0.3);
+.main-container {
+    width: 100%;
+    max-width: 500px;
+    padding: 20px;
     text-align: center;
 }
 
-h1 {
+header h1 {
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+header p {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
     margin-bottom: 20px;
-    color: #203a43;
 }
 
 input {
-    width: 92%;
-    padding: 10px;
-    font-size: 15px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    border: none;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    outline: none;
+}
+
+input:focus {
+    background: rgba(255, 255, 255, 0.2);
 }
 
 button {
-    margin-top: 15px;
-    width: 50%;
-    padding: 12px;
-    font-size: 15px;
-    background: #036a44;
-    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
     border: none;
-    border-radius: 20px;
+    background: var(--primary);
+    color: white;
     cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s;
 }
 
 button:hover {
-    background: #40b86a;
+    transform: scale(1.05);
+    background: var(--secondary);
 }
 
-#result {
+.hidden {
+    display: none;
+}
+
+#resultContainer {
     margin-top: 20px;
-    font-size: 18px;
-}
-.risk-container {
-    margin-top: 20px;
-    text-align: left;
+    animation: fadeIn 0.5s ease-in;
 }
 
-.risk-label {
-    margin-bottom: 6px;
-    font-weight: bold;
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
-.risk-bar {
+.chart-container {
+    position: relative;
+    height: 200px;
     width: 100%;
-    height: 20px;
-    background: #e0e0e0;
-    border-radius: 10px;
-    overflow: hidden;
+    margin: 20px auto;
 }
 
-#riskFill {
-    height: 100%;
-    width: 0%;
-    background: green;
-    transition: width 0.5s ease;
+.btn-secondary {
+    display: inline-block;
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #ccc;
+    text-decoration: none;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    transition: all 0.3s;
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.1);
+    color: #fff;
+    border-color: #fff;
+}
+
+footer {
+    margin-top: 40px;
+    font-size: 0.8rem;
+    opacity: 0.5;
 }

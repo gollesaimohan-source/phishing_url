@@ -2,30 +2,50 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Phishing URL Detection</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing URL Detector</title>
+    <!-- Google Fonts for that "student project" feel -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <!-- Chart.js for the graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
 
-    <div class="container">
-        <h1>Phishing URL Detection</h1>
+    <div class="main-container">
+        <header>
+            <h1>🛡️ Phishing URL Detector</h1>
+            <p>Enter a URL to analyze its safety using Machine Learning.</p>
+        </header>
 
-        <input 
-            type="text" 
-            id="urlInput" 
-            placeholder="Enter URL to check"
-        >
+        <div class="card">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    id="urlInput" 
+                    placeholder="https://example.com"
+                >
+                <button onclick="checkURL()">Analyze</button>
+            </div>
 
-        <button onclick="checkURL()">Check URL</button>
+            <div id="loading" class="hidden">Scanning...</div>
 
-        <div id="result"></div>
-        <div class="risk-container">
-    <div class="risk-label">Threat Level</div>
-    <div class="risk-bar">
-        <div id="riskFill"></div>
-    </div>
-</div>
+            <div id="resultContainer" class="hidden">
+                <h2 id="resultText"></h2>
+                
+                <div class="chart-container">
+                    <canvas id="riskChart"></canvas>
+                </div>
 
+                <div id="actionButtons">
+                    <a id="visitBtn" href="#" target="_blank" class="btn-secondary hidden">Visit Site Anyway</a>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Project by [Your Name/Team] | B.Tech 3rd Year</p>
+        </footer>
     </div>
 
     <script src="script.js"></script>
