@@ -1,9 +1,12 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, request, jsonify, render_template
+
+app = Flask(__name__, static_folder="frontend", template_folder="frontend", static_url_path="")
+CORS(app)
 from detector import is_phishing
 
-app = Flask(__name__)
-CORS(app)
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 @app.route("/check-url", methods=["POST"])
 def check_url():
