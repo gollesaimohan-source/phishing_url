@@ -10,6 +10,7 @@ from scamshield.detection.brand_signals import (
     SUSPICIOUS_HOSTNAME_PREFIXES,
 )
 from scamshield.services.fact_check_service import FactCheckService
+from scamshield.services.image_forensics_service import ImageForensicsService
 
 try:
     from PIL import Image, ImageChops, ImageFilter, ImageStat
@@ -630,6 +631,40 @@ def _analyze_image_pixels(file_bytes):
     return metrics, indicators, score_delta
 
 
+def _blend_ml_probability(score, indicators, probability, signal_name):
+    if probability >= 0.75:
+        score = max(score, 80)
+        indicators.append({
+            "name": f"{signal_name} detected by ML classifier",
+            "detail": (
+                f"Independent AI image classifier estimates {probability * 100:.0f}% "
+                f"probability of {signal_name.lower()}."
+            ),
+            "matches": [],
+        })
+    elif probability <= 0.15:
+        score *= 0.5
+        indicators.append({
+            "name": f"{signal_name} unlikely by ML classifier",
+            "detail": (
+                f"Independent AI image classifier estimates only {probability * 100:.0f}% "
+                f"probability of {signal_name.lower()}."
+            ),
+            "matches": [],
+        })
+    else:
+        score += round(probability * 30)
+        indicators.append({
+            "name": f"{signal_name} probability is inconclusive",
+            "detail": (
+                f"Independent AI image classifier estimates {probability * 100:.0f}% "
+                f"probability of {signal_name.lower()}; this is blended with forensic signals."
+            ),
+            "matches": [],
+        })
+    return score
+
+
 def analyze_media_file(
     filename,
     mimetype,
@@ -665,6 +700,7 @@ def analyze_media_file(
         })
 
     forensic_metrics = {}
+    ml_classifier = None
 
     if file_bytes and is_image:
         try:
@@ -679,6 +715,22 @@ def analyze_media_file(
                 "name": "Image forensic read failed",
                 "detail": "The file could not be fully decoded for pixel-level analysis.",
             })
+
+        ml_result = ImageForensicsService().analyze_image(file_bytes, filename)
+        if ml_result.get("checked"):
+            ml_classifier = ml_result
+            strong_ml_signal = False
+            for probability, signal_name in (
+                (ml_result.get("ai_generated_probability"), "AI-generation"),
+                (ml_result.get("deepfake_probability"), "Deepfake manipulation"),
+            ):
+                if probability is not None:
+                    strong_ml_signal = strong_ml_signal or probability >= 0.75
+                    score = _blend_ml_probability(
+                        score, indicators, probability, signal_name
+                    )
+            if strong_ml_signal:
+                score = max(score, 80)
 
     if width and height:
         pixel_count = width * height
@@ -784,6 +836,7 @@ def analyze_media_file(
         "dimensions": {"width": width, "height": height},
         "duration_seconds": duration,
         "forensic_metrics": forensic_metrics,
+        "ml_classifier": ml_classifier,
         "indicators": indicators,
         "explanation": (
             "This scan checks file details and image patterns. "
