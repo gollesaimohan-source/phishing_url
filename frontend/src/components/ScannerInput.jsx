@@ -9,6 +9,13 @@ export default function ScannerInput({
   onSubmit,
   onReset,
 }) {
+  function handleFileChange(eventOrFile) {
+    const file = eventOrFile?.target ? eventOrFile.target.files?.[0] : eventOrFile;
+    if (file) {
+      onFileChange({ target: { files: [file] } });
+    }
+  }
+
   return (
     <div className="scanner-input-panel glass-panel">
       <div className="scanner-panel-heading">
@@ -58,12 +65,20 @@ export default function ScannerInput({
         {['image', 'video'].includes(activeType.id) ? (
           <div className="scanner-field">
             <label>{activeType.inputLabel}</label>
-            <div className="scanner-dropzone">
+            <label
+              className="scanner-dropzone"
+              htmlFor="scanner-file"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault();
+                handleFileChange(event.dataTransfer.files?.[0]);
+              }}
+            >
               <input
                 id="scanner-file"
                 type="file"
                 accept={activeType.id === 'image' ? 'image/*' : 'video/*'}
-                onChange={onFileChange}
+                onChange={handleFileChange}
                 disabled={isScanning}
               />
               <i className={`bi ${activeType.id === 'image' ? 'bi-cloud-upload' : 'bi-film'}`} />
@@ -75,7 +90,7 @@ export default function ScannerInput({
                   ? `Ready to scan ${selectedFile.name}`
                   : `Upload a ${activeType.label.toLowerCase()} and ScamShield will analyze it.`}
               </span>
-            </div>
+            </label>
           </div>
         ) : null}
 
