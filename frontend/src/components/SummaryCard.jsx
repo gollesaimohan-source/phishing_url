@@ -9,7 +9,7 @@ export default function SummaryCard({ icon, title, value, description, variant =
   const accent = accentMap[variant] || accentMap.info;
 
   return (
-    <div className="summary-card glass-panel h-100 overflow-hidden" style={{ background: `linear-gradient(180deg, rgba(12, 24, 37, 0.9), rgba(12, 24, 37, 0.72))` }}>
+    <div className="summary-card glass-panel h-100 overflow-hidden">
       <div className="summary-card-glow" style={{ background: accent.glow }} />
       <div className="summary-card-accent" style={{ background: accent.color }} />
 

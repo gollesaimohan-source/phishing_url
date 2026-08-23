@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
+import { useTheme } from "../hooks/useTheme.js";
 import { formatDateTime } from "../utils/formatters.js";
 
 export default function Navbar({ onToggleSidebar }) {
   const { logout, user } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -53,6 +55,15 @@ export default function Navbar({ onToggleSidebar }) {
       </div>
 
       <div className="d-flex align-items-center gap-3">
+        <button
+          className="theme-toggle"
+          type="button"
+          onClick={toggleTheme}
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+        >
+          <i className={`bi ${theme === "dark" ? "bi-sun" : "bi-moon-stars"}`} />
+          <span>{theme === "dark" ? "Light" : "Dark"}</span>
+        </button>
         <div className="position-relative" ref={dropdownRef}>
           <button
             className="user-menu-button"

@@ -1,6 +1,9 @@
 import PageContainer from "../layouts/PageContainer.jsx";
+import { useTheme } from "../hooks/useTheme.js";
 
 export default function Settings() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <PageContainer title="Settings" subtitle="ScamShield system parameters and operational metadata configurations.">
       <div className="settings-shell row justify-content-center animate-fade-in">
@@ -14,9 +17,17 @@ export default function Settings() {
               <div className="settings-option-row">
                 <div>
                   <h4>Theme Mode</h4>
-                  <p>System defaults to unified cybersecurity dark theme mode.</p>
+                  <p>Choose the workspace appearance for this device.</p>
                 </div>
-                <span className="settings-tag info">Dark Mode (Default)</span>
+                <button
+                  className="theme-toggle settings-theme-toggle"
+                  type="button"
+                  onClick={toggleTheme}
+                  aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+                >
+                  <i className={`bi ${theme === "dark" ? "bi-sun" : "bi-moon-stars"}`} />
+                  <span>{theme === "dark" ? "Light" : "Dark"}</span>
+                </button>
               </div>
 
               <div className="settings-option-row">
