@@ -318,11 +318,16 @@ a:focus-visible {
   border-radius: 16px;
   box-shadow: 0 18px 42px rgba(2, 8, 23, 0.45);
   padding: 16px;
+  z-index: 101;
 }
 
 .dropdown-item-hover:hover {
   background: rgba(137, 206, 255, 0.08);
   color: var(--text-primary) !important;
+}
+
+.dropdown-item-hover {
+  color: var(--text-secondary);
 }
 
 .sidebar-status {
