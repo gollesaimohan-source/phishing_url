@@ -516,7 +516,7 @@ def _analyze_image_pixels(file_bytes):
     software = str(exif.get(305, "")).lower()
 
     if not exif:
-        score_delta += 24
+        score_delta += 6
         indicators.append({
             "name": "No camera details found",
             "detail": (
@@ -545,7 +545,7 @@ def _analyze_image_pixels(file_bytes):
         "automatic1111", "runway", "leonardo",
     ]
     if any(term in software for term in generator_software):
-        score_delta += 34
+        score_delta += 50
         indicators.append({
             "name": "AI tool name found",
             "detail": "The file details mention a known AI image tool.",
@@ -586,8 +586,8 @@ def _analyze_image_pixels(file_bytes):
             ),
         })
 
-    if noise_level < 3.5:
-        score_delta += 16
+    if noise_level < 1.5:
+        score_delta += 6
         indicators.append({
             "name": "Camera grain is weak",
             "detail": (
@@ -603,7 +603,7 @@ def _analyze_image_pixels(file_bytes):
         })
 
     if edge_mean < 8:
-        score_delta += 10
+        score_delta += 5
         indicators.append({
             "name": "Edges look too smooth",
             "detail": (
@@ -643,7 +643,7 @@ def _blend_ml_probability(score, indicators, probability, signal_name):
             "matches": [],
         })
     elif probability <= 0.15:
-        score *= 0.5
+        score = min(score, 20)
         indicators.append({
             "name": f"{signal_name} unlikely by ML classifier",
             "detail": (
@@ -677,7 +677,7 @@ def analyze_media_file(
     name = (filename or "").lower()
     mimetype = (mimetype or "").lower()
     indicators = []
-    score = 18
+    score = 10
 
     is_video = mimetype.startswith("video/")
     is_image = mimetype.startswith("image/")
@@ -689,8 +689,8 @@ def analyze_media_file(
             "detail": "The uploaded file does not look like a standard image or video format.",
         })
 
-    if size_bytes < 120_000:
-        score += 16
+    if size_bytes < 40_000:
+        score += 6
         indicators.append({
             "name": "File is very small",
             "detail": (
@@ -761,6 +761,9 @@ def analyze_media_file(
             "name": "AI word found in file name",
             "detail": f"The file name contains: {', '.join(matched_terms[:3])}.",
         })
+
+    if any(item["name"] == "AI tool name found" for item in indicators):
+        score = max(score, 60)
 
     if is_video and duration:
         if duration < 3:

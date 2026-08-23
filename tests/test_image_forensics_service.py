@@ -15,6 +15,28 @@ def _image_bytes():
     return output.getvalue()
 
 
+def _normal_photo_bytes(with_exif=False):
+    image = Image.new("RGB", (800, 600))
+    pixels = image.load()
+    for y in range(600):
+        for x in range(800):
+            pixels[x, y] = (
+                int(70 + 120 * x / 800),
+                int(90 + 100 * y / 600),
+                int(130 + 50 * (x + y) / 1400),
+            )
+    output = BytesIO()
+    if with_exif:
+        exif = Image.Exif()
+        exif[271] = "Example Camera"
+        exif[272] = "Example Model"
+        exif[36867] = "2026:08:23 12:00:00"
+        image.save(output, format="JPEG", quality=65, exif=exif)
+    else:
+        image.save(output, format="JPEG", quality=65)
+    return output.getvalue()
+
+
 def _result(ai_probability=None, deepfake_probability=None, checked=True):
     return {
         "checked": checked,
@@ -143,3 +165,45 @@ def test_video_does_not_call_sightengine():
     analyze.assert_not_called()
     assert result["ml_classifier"] is None
     assert any(item["name"] == "Frame-level model recommended" for item in result["indicators"])
+
+
+def test_normal_compressed_photo_stays_below_borderline_without_ml():
+    file_bytes = _normal_photo_bytes()
+    with patch(
+        "scamshield.ai.detector.ImageForensicsService.analyze_image",
+        return_value=_result(checked=False),
+    ):
+        result = analyze_media_file(
+            "shared-photo.jpg", "image/jpeg", len(file_bytes), file_bytes=file_bytes
+        )
+
+    assert len(file_bytes) < 20_000
+    assert result["ai_likelihood"] < 35
+    assert result["risk_level"] != "May be AI-made"
+
+
+def test_confident_real_ml_result_caps_normal_photo_score():
+    file_bytes = _normal_photo_bytes()
+    with patch(
+        "scamshield.ai.detector.ImageForensicsService.analyze_image",
+        return_value=_result(ai_probability=0.05),
+    ):
+        result = analyze_media_file(
+            "shared-photo.jpg", "image/jpeg", len(file_bytes), file_bytes=file_bytes
+        )
+
+    assert result["ai_likelihood"] <= 20
+
+
+def test_confident_ai_ml_result_overrides_clean_forensics():
+    file_bytes = _normal_photo_bytes(with_exif=True)
+    with patch(
+        "scamshield.ai.detector.ImageForensicsService.analyze_image",
+        return_value=_result(ai_probability=0.90),
+    ):
+        result = analyze_media_file(
+            "camera-photo.jpg", "image/jpeg", 200_000, file_bytes=file_bytes
+        )
+
+    assert result["ai_likelihood"] >= 80
+    assert result["risk_level"] == "May be AI-made"
