@@ -75,7 +75,7 @@ export default function Navbar({ onToggleSidebar }) {
           </button>
 
           {dropdownOpen ? (
-            <div className="user-menu-popover position-absolute end-0 mt-2 z-3" style={{ width: "260px" }}>
+            <div className="user-menu-popover position-absolute end-0 mt-2" style={{ width: "260px", zIndex: 1100 }}>
               <div className="pb-3 border-bottom border-secondary border-opacity-15">
                 <h6 className="mb-0 text-light fw-bold">{user?.username || "Analyst"}</h6>
                 <span className="text-muted small d-block text-truncate">{user?.email}</span>
