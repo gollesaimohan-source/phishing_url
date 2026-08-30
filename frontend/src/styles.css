@@ -171,6 +171,30 @@
   border-color: var(--line);
 }
 
+.app-theme-light .user-menu-popover {
+  background: var(--surface-strong);
+  border-color: var(--line);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.1);
+}
+
+.app-theme-light .user-menu-popover .text-muted {
+  color: var(--text-secondary) !important;
+}
+
+.app-theme-light .user-menu-popover .text-light,
+.app-theme-light .user-menu-popover h6 {
+  color: var(--text-primary) !important;
+}
+
+.app-theme-light .user-menu-popover .dropdown-item-hover {
+  color: var(--text-secondary);
+}
+
+.app-theme-light .user-menu-popover .dropdown-item-hover:hover {
+  background: rgba(8, 145, 178, 0.1);
+  color: var(--text-primary) !important;
+}
+
 body {
   min-width: 320px;
   min-height: 100vh;
