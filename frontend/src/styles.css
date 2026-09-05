@@ -325,6 +325,9 @@ a:focus-visible {
   align-items: center;
   justify-content: space-between;
   min-height: 72px;
+  position: relative;
+  z-index: 1040;
+  overflow: visible;
   padding: 18px 28px;
   border-bottom: 1px solid var(--line);
   background: rgba(12, 24, 37, 0.8);
