@@ -9,6 +9,7 @@ from scamshield.config import Config
 from scamshield.extensions import cors
 from scamshield.middleware.api_rate_limiting import register_api_rate_limiting
 from scamshield.middleware.request_logging import register_request_logging
+from scamshield.middleware.security_headers import register_security_headers
 from scamshield.repositories.database import init_db
 from scamshield.routes import register_blueprints
 from scamshield.utils.error_handlers import register_error_handlers
@@ -51,6 +52,7 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     register_error_handlers(app)
     register_request_logging(app)
     register_api_rate_limiting(app)
+    register_security_headers(app)
     # Production-time frontend build check: log a CRITICAL warning if missing
     try:
         if not app.config.get("DEBUG", False):

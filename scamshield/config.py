@@ -48,6 +48,7 @@ class Config:
         "true",
         "yes",
     }
+    MAX_CONTENT_LENGTH = 16 * 1024 * 1024
     JWT_SECRET_KEY = os.environ.get(
         "JWT_SECRET_KEY",
         os.environ.get("SECRET_KEY", _INSECURE_JWT_SECRET_KEY),

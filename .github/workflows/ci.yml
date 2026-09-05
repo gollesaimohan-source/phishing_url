@@ -31,7 +31,12 @@ jobs:
           pip install -e .
 
       - name: Run tests with coverage
-        run: pytest tests/ --cov=scamshield --cov-report=term-missing
+        run: pytest tests/ --cov=scamshield --cov-report=term-missing --cov-fail-under=70
+
+      - name: Audit Python dependencies
+        run: |
+          python -m pip install pip-audit
+          pip-audit -r requirements.txt
 
   frontend-build:
     name: Frontend build (React)
@@ -54,3 +59,6 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Audit frontend dependencies
+        run: npm audit --audit-level=high

@@ -1,7 +1,7 @@
 """Centralized JSON error handling."""
 
-from flask import Flask, jsonify
-from werkzeug.exceptions import HTTPException
+from flask import Flask, jsonify, request
+from werkzeug.exceptions import HTTPException, RequestEntityTooLarge
 
 from scamshield.repositories.exceptions import (
     DatabaseConnectionError,
@@ -106,6 +106,21 @@ def register_error_handlers(app: Flask) -> None:
                 }
             ),
             error.code,
+        )
+
+    @app.errorhandler(RequestEntityTooLarge)
+    def handle_request_entity_too_large(error: RequestEntityTooLarge):
+        app.logger.warning("request_entity_too_large path=%s", request.path)
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Uploaded file is too large",
+                    "error": "Request Entity Too Large",
+                    "details": {"max_size_mb": 16},
+                }
+            ),
+            413,
         )
 
     @app.errorhandler(Exception)

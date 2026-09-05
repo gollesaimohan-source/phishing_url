@@ -202,6 +202,8 @@ def get_database():
 
     uri = current_app.config["MONGODB_URI"]
     if not uri:
+        if current_app.config["MONGODB_STRICT"]:
+            raise DatabaseConnectionError("MongoDB URI is not configured")
         return _use_memory_fallback(
             "mongodb_uri_missing using in-memory development database"
         )
