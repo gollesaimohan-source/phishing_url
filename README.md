@@ -30,7 +30,7 @@ ScamShield is a full‑stack reference implementation for analyst-friendly scam 
 
 - URLs (structural and heuristic analysis)
 - Text (email, SMS, news) with urgency, credential and reward signals
-- Images and video metadata with pixel-level heuristics (Pillow optional)
+- Images and videos with local pixel-level and frame-sampling heuristics
 - Threat intelligence records and a paginated history repository
 
 The codebase emphasizes observability, extendability, and clear separation of concerns (controllers → services → repositories → detection engine).
@@ -60,7 +60,7 @@ https://phishing-url-xjgv.onrender.com
 | URL structural analysis (HTTPS, IP host, long URL, shorteners) | ✅ |
 | Text analysis (email, SMS, news) with urgency/authority/reward signals | ✅ |
 | Image AI-generation/deepfake checks via optional Sightengine ML models | ✅ |
-| Image forensic heuristics (entropy, noise, EXIF) — Pillow optional | ✅ |
+| Image and sampled-video forensic heuristics (entropy, noise, EXIF, frame motion) | ✅ |
 | Media upload endpoint with metadata support (width/height/duration) | ✅ |
 | Threat intelligence domain records & top threats listing | ✅ |
 | Scan history (MongoDB-backed, paginated) with in-memory fallback | ✅ |
@@ -111,7 +111,7 @@ Notes:
 - The offline Random Forest trainer is retained at `experiments/train_model.py` with its dependencies in `requirements-experiments.txt`. It is not part of the live application pipeline.
 - Image analysis uses two signals: when `SIGHTENGINE_API_USER` and `SIGHTENGINE_API_SECRET` are configured, Sightengine's `genai` and `deepfake` models provide an independent ML signal that can confirm or override weaker forensic evidence. The existing forensic checks in `scamshield/ai/detector.py` always run as a second signal, covering EXIF metadata, pixel entropy, noise, edge detection, and filename patterns.
 - Sightengine credentials are optional and available for free at https://sightengine.com. Missing credentials or an API failure gracefully degrades to forensic-heuristics-only analysis.
-- Video analysis is currently forensic/heuristic-only. Sightengine is not called for video; frame-level deepfake video detection is a known future improvement.
+- Video analysis uses free local processing only: it samples up to six evenly spaced frames, reuses the image EXIF/noise/entropy heuristics, and checks temporal consistency between frames. This is frame-sampling heuristic analysis, not a trained deepfake detection model. A dedicated model integration (for example, Sightengine or Reality Defender) remains a future improvement if budget allows.
 
 ---
 

@@ -1,10 +1,17 @@
 from io import BytesIO
+import os
+import tempfile
 from unittest.mock import Mock, patch
 
+import cv2
+import numpy as np
 import requests
 from PIL import Image
 
-from scamshield.ai.detector import analyze_media_file
+from scamshield.ai.detector import (
+    VIDEO_MAX_DURATION_SECONDS,
+    analyze_media_file,
+)
 from scamshield.services.image_forensics_service import ImageForensicsService
 
 
@@ -35,6 +42,32 @@ def _normal_photo_bytes(with_exif=False):
     else:
         image.save(output, format="JPEG", quality=65)
     return output.getvalue()
+
+
+def _video_bytes(frame_count=6, fps=6, moving=True):
+    path = None
+    writer = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as output:
+            path = output.name
+        writer = cv2.VideoWriter(
+            path, cv2.VideoWriter_fourcc(*"mp4v"), fps, (64, 48)
+        )
+        for index in range(frame_count):
+            frame = np.zeros((48, 64, 3), dtype=np.uint8)
+            frame[:, :, 0] = (80 + (index if moving else 0) * 10) % 256
+            offset = index if moving else 0
+            frame[10:38, 12 + offset:28 + offset, 1] = 220
+            writer.write(frame)
+        writer.release()
+        writer = None
+        with open(path, "rb") as video:
+            return video.read()
+    finally:
+        if writer is not None:
+            writer.release()
+        if path:
+            os.unlink(path)
 
 
 def _result(ai_probability=None, deepfake_probability=None, checked=True):
@@ -165,6 +198,62 @@ def test_video_does_not_call_sightengine():
     analyze.assert_not_called()
     assert result["ml_classifier"] is None
     assert any(item["name"] == "Frame-level model recommended" for item in result["indicators"])
+
+
+def test_video_samples_frames_and_runs_forensics():
+    result = analyze_media_file(
+        "clip.mp4",
+        "video/mp4",
+        200_000,
+        file_bytes=_video_bytes(),
+    )
+
+    assert result["forensic_metrics"]["video"]["sampled_frames"] == 6
+    assert any(
+        item["name"] == "Consistent forensic anomalies across sampled frames"
+        for item in result["indicators"]
+    )
+    assert any(item["name"] == "Frame motion analysis" for item in result["indicators"]) is False
+    assert any(item["name"] == "Frame-level model recommended" for item in result["indicators"])
+
+
+def test_near_static_video_adds_conservative_motion_signal():
+    result = analyze_media_file(
+        "static.mp4", "video/mp4", 200_000, file_bytes=_video_bytes(moving=False)
+    )
+
+    assert any(item["name"] == "Frame motion analysis" for item in result["indicators"])
+
+
+def test_corrupt_video_returns_graceful_indicator():
+    result = analyze_media_file(
+        "broken.mp4", "video/mp4", 12, file_bytes=b"not a video"
+    )
+
+    assert result["media_type"] == "Video"
+    assert any(item["name"] == "Video frame extraction skipped" for item in result["indicators"])
+
+
+def test_video_over_duration_cap_keeps_duration_heuristics():
+    result = analyze_media_file(
+        "long.mp4",
+        "video/mp4",
+        200_000,
+        duration=VIDEO_MAX_DURATION_SECONDS + 1,
+        file_bytes=_video_bytes(frame_count=301, fps=1),
+    )
+
+    assert not result["forensic_metrics"]
+    assert any(item["name"] == "Video frame extraction skipped" for item in result["indicators"])
+    assert any(item["name"] == "Frame-level model recommended" for item in result["indicators"])
+
+
+def test_duration_only_video_heuristics_are_preserved():
+    short = analyze_media_file("short.mp4", "video/mp4", 200_000, duration=2)
+    long = analyze_media_file("long.mp4", "video/mp4", 200_000, duration=61)
+
+    assert any(item["name"] == "Very short clip" for item in short["indicators"])
+    assert not any(item["name"] == "Very short clip" for item in long["indicators"])
 
 
 def test_normal_compressed_photo_stays_below_borderline_without_ml():

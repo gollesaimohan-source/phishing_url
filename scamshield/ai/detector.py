@@ -1,8 +1,17 @@
 import re
 import math
+import os
+import tempfile
 from datetime import datetime, timezone
 from io import BytesIO
 from urllib.parse import urlparse
+
+try:
+    import cv2
+    import numpy as np
+except ImportError:  # OpenCV is optional until media dependencies are installed.
+    cv2 = None
+    np = None
 
 from scamshield.detection.brand_signals import (
     BRANDS,
@@ -631,6 +640,171 @@ def _analyze_image_pixels(file_bytes):
     return metrics, indicators, score_delta
 
 
+VIDEO_SAMPLE_COUNT = 6
+VIDEO_MAX_DURATION_SECONDS = 5 * 60
+VIDEO_MAX_SIZE_BYTES = 50 * 1024 * 1024
+
+
+def _extract_video_frames(file_bytes, sample_count=VIDEO_SAMPLE_COUNT):
+    """Extract evenly spaced JPEG samples without retaining decoded frames."""
+    if cv2 is None:
+        return [], {}, "OpenCV is not installed; frame extraction was skipped."
+    if not file_bytes:
+        return [], {}, "The video upload was empty."
+    if len(file_bytes) > VIDEO_MAX_SIZE_BYTES:
+        return [], {}, "Video exceeds the 50 MB frame-analysis safety limit."
+
+    temp_path = None
+    capture = None
+    try:
+        with tempfile.NamedTemporaryFile(suffix=".video", delete=False) as temp_file:
+            temp_file.write(file_bytes)
+            temp_path = temp_file.name
+
+        capture = cv2.VideoCapture(temp_path)
+        if not capture.isOpened():
+            return [], {}, "The video could not be opened or decoded."
+
+        frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+        fps = float(capture.get(cv2.CAP_PROP_FPS) or 0)
+        width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+        height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+        duration = frame_count / fps if fps > 0 and frame_count > 0 else 0
+        metadata = {
+            "frame_count": frame_count,
+            "fps": round(fps, 3),
+            "width": width,
+            "height": height,
+            "duration_seconds": round(duration, 3),
+        }
+        if duration > VIDEO_MAX_DURATION_SECONDS:
+            return [], metadata, "Video exceeds the 5 minute frame-analysis safety limit."
+        if frame_count <= 0:
+            return [], metadata, "The video contains no readable frames."
+
+        positions = [
+            round(index * (frame_count - 1) / max(1, sample_count - 1))
+            for index in range(min(sample_count, frame_count))
+        ]
+        frames = []
+        for position in positions:
+            capture.set(cv2.CAP_PROP_POS_FRAMES, position)
+            ok, frame = capture.read()
+            if not ok or frame is None:
+                continue
+            ok, encoded = cv2.imencode(".jpg", frame)
+            if ok:
+                frames.append(encoded.tobytes())
+            del frame
+        if not frames:
+            return [], metadata, "The video opened, but no sample frames could be decoded."
+        return frames, metadata, None
+    except (OSError, ValueError, cv2.error) as error:
+        return [], {}, f"Video frame extraction failed: {error}"
+    finally:
+        if capture is not None:
+            capture.release()
+        if temp_path:
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
+
+
+def _analyze_video_frames(file_bytes):
+    frames, video_metadata, extraction_error = _extract_video_frames(file_bytes)
+    if not frames:
+        return {}, [], 0, extraction_error
+
+    frame_metrics = []
+    frame_indicators = []
+    frame_scores = []
+    grayscale_frames = []
+    try:
+        for frame_bytes in frames:
+            metrics, indicators, frame_score = _analyze_image_pixels(frame_bytes)
+            frame_metrics.append(metrics)
+            frame_indicators.append(indicators)
+            frame_scores.append(frame_score)
+            image = cv2.imdecode(
+                np.frombuffer(frame_bytes, dtype=np.uint8), cv2.IMREAD_GRAYSCALE
+            )
+            if image is not None:
+                grayscale_frames.append(image)
+    except (OSError, ValueError, TypeError) as error:
+        return video_metadata, [], 0, f"Frame forensic analysis failed: {error}"
+    finally:
+        frames.clear()
+
+    indicators = []
+    score_delta = 0
+    common_counts = {}
+    for items in frame_indicators:
+        for item in items:
+            if item["name"] in {
+                "Texture looks too simple",
+                "Camera grain is weak",
+                "Edges look too smooth",
+                "Colors look unusually grouped",
+                "No camera details found",
+            }:
+                common_counts[item["name"]] = common_counts.get(item["name"], 0) + 1
+    common_flags = [
+        name for name, count in common_counts.items() if count >= max(4, len(frame_metrics) - 2)
+    ]
+    if common_flags:
+        score_delta += 8
+        indicators.append({
+            "name": "Consistent forensic anomalies across sampled frames",
+            "detail": (
+                f"{len(common_flags)} forensic red flag(s) appeared in most of "
+                f"{len(frame_metrics)} sampled frames: {', '.join(common_flags[:3])}."
+            ),
+        })
+
+    metric_ranges = {}
+    for metric_name in ("entropy", "noise_level", "edge_mean"):
+        values = [metrics[metric_name] for metrics in frame_metrics if metric_name in metrics]
+        if values:
+            metric_ranges[metric_name] = round(max(values) - min(values), 3)
+    if metric_ranges and any(
+        metric_ranges.get(name, 0) > threshold
+        for name, threshold in (("entropy", 1.2), ("noise_level", 4.0), ("edge_mean", 8.0))
+    ):
+        score_delta += 4
+        indicators.append({
+            "name": "Inconsistent frame characteristics",
+            "detail": (
+                "Sampled frames have widely different entropy, noise, or edge "
+                "characteristics, which can occur after reprocessing or splicing."
+            ),
+        })
+
+    motion_values = [
+        float(cv2.absdiff(previous, current).mean())
+        for previous, current in zip(grayscale_frames, grayscale_frames[1:])
+        if previous.shape == current.shape
+    ]
+    if motion_values and max(motion_values) < 2.0:
+        score_delta += 5
+        indicators.append({
+            "name": "Frame motion analysis",
+            "detail": (
+                "Sampled frames are nearly identical. This can indicate a loop or "
+                "synthetic near-static clip, but this heuristic is not conclusive."
+            ),
+        })
+
+    video_metadata["sampled_frames"] = len(frame_metrics)
+    video_metadata["frame_metrics"] = frame_metrics
+    video_metadata["frame_indicators"] = frame_indicators
+    video_metadata["frame_score_range"] = {
+        "min": min(frame_scores),
+        "max": max(frame_scores),
+    }
+    return video_metadata, indicators, score_delta, None
+
+
 def _blend_ml_probability(score, indicators, probability, signal_name):
     if probability >= 0.75:
         score = max(score, 80)
@@ -779,11 +953,27 @@ def analyze_media_file(
             score -= 3
 
     if is_video:
+        if file_bytes:
+            video_metrics, video_indicators, video_delta, video_error = _analyze_video_frames(file_bytes)
+            if video_metrics:
+                forensic_metrics = {"video": video_metrics}
+                indicators.extend(video_indicators)
+                score += video_delta
+                width = video_metrics.get("width") or width
+                height = video_metrics.get("height") or height
+                if not duration:
+                    duration = video_metrics.get("duration_seconds") or duration
+            elif video_error:
+                indicators.append({
+                    "name": "Video frame extraction skipped",
+                    "detail": f"{video_error} Duration-only video heuristics were retained.",
+                })
         indicators.append({
             "name": "Frame-level model recommended",
             "detail": (
-                "Video upload is supported, but advanced deepfake detection "
-                "requires sampling frames and running a trained video model."
+                "This scan now samples frames for EXIF/noise/entropy heuristics "
+                "and temporal consistency. It is still not equivalent to a "
+                "dedicated trained video deepfake detection model."
             ),
         })
 
