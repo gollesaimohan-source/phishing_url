@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export default function ScannerInput({
   activeType,
@@ -12,6 +12,7 @@ export default function ScannerInput({
   onReset,
   onClearFile,
 }) {
+  const fileInputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewError, setPreviewError] = useState(false);
 
@@ -42,12 +43,22 @@ export default function ScannerInput({
     if (file) {
       onFileChange({ target: { files: [file] } });
     }
+  }
 
-    function clearSelectedFile(event) {
-      event.preventDefault();
-      event.stopPropagation();
-      onClearFile();
-    }
+  function clearSelectedFile(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    onClearFile();
+  }
+
+  function openFilePicker() {
+    if (!isScanning) fileInputRef.current?.click();
+  }
+
+  function handleDrop(event) {
+    event.preventDefault();
+    handleFileChange(event.dataTransfer.files?.[0]);
   }
 
   return (
@@ -99,24 +110,35 @@ export default function ScannerInput({
         {['image', 'video'].includes(activeType.id) ? (
           <div className="scanner-field">
             <label>{activeType.inputLabel}</label>
-            <label
+            <div
               className="scanner-dropzone"
-              htmlFor="scanner-file"
               onDragOver={(event) => event.preventDefault()}
-              onDrop={(event) => {
-                event.preventDefault();
-                handleFileChange(event.dataTransfer.files?.[0]);
+              onDrop={handleDrop}
+              onClick={openFilePicker}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  openFilePicker();
+                }
               }}
+              role="button"
+              tabIndex={isScanning ? -1 : 0}
             >
               <input
+                ref={fileInputRef}
                 id="scanner-file"
                 type="file"
                 accept={activeType.id === 'image' ? 'image/*' : 'video/*'}
                 onChange={handleFileChange}
+                onClick={(event) => event.stopPropagation()}
                 disabled={isScanning}
               />
               {selectedFile && previewUrl && !previewError ? (
-                <div className="scanner-preview" onClick={(event) => event.preventDefault()}>
+                <div
+                  className="scanner-preview"
+                  onClick={(event) => event.stopPropagation()}
+                  onKeyDown={(event) => event.stopPropagation()}
+                >
                   {activeType.id === "image" ? (
                     <img
                       src={previewUrl}
@@ -155,7 +177,7 @@ export default function ScannerInput({
                   </span>
                 </>
               )}
-            </label>
+            </div>
           </div>
         ) : null}
 
