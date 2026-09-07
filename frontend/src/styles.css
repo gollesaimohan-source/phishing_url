@@ -2811,6 +2811,102 @@ a:focus-visible {
   white-space: nowrap;
 }
 
+.scamshield-toast {
+  min-width: 300px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+}
+
+.scamshield-toast .toast-header,
+.scamshield-toast .toast-body {
+  background: transparent;
+  color: inherit;
+}
+
+.scamshield-toast-success .toast-header i {
+  color: var(--color-success, #22c55e);
+}
+
+.scamshield-toast-error .toast-header i {
+  color: var(--color-danger, #ef4444);
+}
+
+.scamshield-toast-info .toast-header i {
+  color: var(--color-info, #38bdf8);
+}
+
+.scamshield-confirm-modal {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.scamshield-confirm-modal .modal-header,
+.scamshield-confirm-modal .modal-footer {
+  border-color: var(--line);
+}
+
+.scamshield-confirm-modal .btn-close {
+  filter: invert(1);
+}
+
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 120px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.skeleton-line {
+  display: block;
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--surface-hover), var(--line), var(--surface-hover));
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-line:nth-child(2) {
+  width: 72%;
+}
+
+.skeleton-line:nth-child(3) {
+  width: 48%;
+}
+
+.skeleton-kpi {
+  min-height: 150px;
+}
+
+.skeleton-table,
+.skeleton-history {
+  min-height: 280px;
+  border: 0;
+  border-radius: 0;
+}
+
+.skeleton-feed {
+  min-height: 250px;
+  border: 0;
+  border-radius: 0;
+}
+
+@keyframes skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
 .scanner-sample-button {
   display: inline-flex;
   align-items: center;

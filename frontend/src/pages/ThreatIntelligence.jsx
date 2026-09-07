@@ -7,6 +7,7 @@ import LoadingSpinner from "../components/LoadingSpinner.jsx";
 import ErrorAlert from "../components/ErrorAlert.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import { formatDateTime, riskBadgeClass } from "../utils/formatters.js";
+import { formatRelativeTime } from "../utils/formatRelativeTime.js";
 
 export default function ThreatIntelligence() {
   const [domain, setDomain] = useState("");
@@ -170,7 +171,9 @@ export default function ThreatIntelligence() {
                             {reputation}
                           </span>
                         </td>
-                        <td>{formatDateTime(threat.last_seen)}</td>
+                        <td title={formatDateTime(threat.last_seen)}>
+                          {formatRelativeTime(threat.last_seen)}
+                        </td>
                       </tr>
                     );
                   })}

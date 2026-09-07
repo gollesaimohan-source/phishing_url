@@ -4,8 +4,10 @@ import PageContainer from "../layouts/PageContainer.jsx";
 import SummaryCard from "../components/SummaryCard.jsx";
 import StatusBadge from "../components/StatusBadge.jsx";
 import EmptyState from "../components/EmptyState.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
+import SkeletonCard from "../components/SkeletonCard.jsx";
 import ErrorAlert from "../components/ErrorAlert.jsx";
+import { formatDateTime } from "../utils/formatters.js";
+import { formatRelativeTime } from "../utils/formatRelativeTime.js";
 import {
   getDashboardSummary,
   getRecentScans,
@@ -140,23 +142,23 @@ export default function Dashboard() {
     >
       {error ? <ErrorAlert message={error} onDismiss={() => setError("")} /> : null}
 
-      {isLoading ? (
-        <div className="glass-panel p-5 text-center mb-4">
-          <LoadingSpinner message="Connecting to ScamShield Threat Telemetry…" />
-        </div>
-      ) : null}
-
       {/* Summary KPI Row */}
       <div className="row g-4 mb-5 dashboard-kpi-grid">
-        {summaryCards.map((card, idx) => (
-          <div
-            key={card.title}
-            className="col-12 col-sm-6 col-lg-3 animate-fade-in"
-            style={{ animationDelay: `${idx * 0.08}s` }}
-          >
-            <SummaryCard {...card} />
-          </div>
-        ))}
+        {isLoading
+          ? Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="col-12 col-sm-6 col-lg-3">
+                <SkeletonCard className="skeleton-kpi" rows={3} />
+              </div>
+            ))
+          : summaryCards.map((card, idx) => (
+              <div
+                key={card.title}
+                className="col-12 col-sm-6 col-lg-3 animate-fade-in"
+                style={{ animationDelay: `${idx * 0.08}s` }}
+              >
+                <SummaryCard {...card} />
+              </div>
+            ))}
       </div>
       {Number(summary.total_scans ?? 0) === 0 ? (
         <div className="text-muted small mb-5">No scans yet - run your first scan.</div>
@@ -209,7 +211,9 @@ export default function Dashboard() {
               </Link>
             </div>
             <div className="p-0">
-              {recentScans.length > 0 ? (
+              {isLoading ? (
+                <SkeletonCard className="skeleton-table" rows={5} />
+              ) : recentScans.length > 0 ? (
                 <div className="table-responsive">
                   <table className="dashboard-table table align-middle mb-0">
                     <thead>
@@ -235,7 +239,9 @@ export default function Dashboard() {
                             <StatusBadge status={scan.risk || "suspicious"} />
                           </td>
                           <td className="pe-4 py-3 text-end text-muted small">
-                            {formatRelativeTime(scan.created_at)}
+                            <span title={formatDateTime(scan.created_at)}>
+                              {formatRelativeTime(scan.created_at)}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -262,7 +268,9 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="dashboard-feed-list">
-              {threatFeed.length > 0 ? (
+              {isLoading ? (
+                <SkeletonCard className="skeleton-feed" rows={4} />
+              ) : threatFeed.length > 0 ? (
                 threatFeed.map((item, idx) => (
                   <div key={item.threat_id || item.domain || idx} className="dashboard-feed-item">
                     <div className="dashboard-feed-icon">
@@ -294,16 +302,4 @@ export default function Dashboard() {
 
 function formatCount(value) {
   return new Intl.NumberFormat().format(Number(value || 0));
-}
-
-function formatRelativeTime(value) {
-  if (!value) return "Just now";
-  const timestamp = new Date(value).getTime();
-  if (Number.isNaN(timestamp)) return "Just now";
-  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
-  if (seconds < 60) return "Just now";
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
 }

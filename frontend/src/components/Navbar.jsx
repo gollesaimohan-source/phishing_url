@@ -3,11 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { useTheme } from "../hooks/useTheme.js";
 import { formatDateTime } from "../utils/formatters.js";
+import { useToast } from "../hooks/useToast.js";
+import { formatRelativeTime } from "../utils/formatRelativeTime.js";
 
 export default function Navbar({ onToggleSidebar }) {
   const { logout, user } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -18,6 +21,7 @@ export default function Navbar({ onToggleSidebar }) {
     } catch (error) {
       console.error("Logout request failed", error);
     } finally {
+      showToast("You have been logged out successfully.", "success");
       navigate("/login", { replace: true });
     }
   };
@@ -92,7 +96,9 @@ export default function Navbar({ onToggleSidebar }) {
               <div className="pt-2">
                 <div className="text-muted fs-8 mb-2">
                   Last login: <br />
-                  <strong className="text-light">{formatDateTime(user?.last_login)}</strong>
+                  <strong className="text-light" title={formatDateTime(user?.last_login)}>
+                    {formatRelativeTime(user?.last_login)}
+                  </strong>
                 </div>
                 <button
                   className="btn btn-danger btn-sm w-100 rounded-3 d-flex align-items-center justify-content-center gap-2"

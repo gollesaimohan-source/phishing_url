@@ -1,6 +1,7 @@
 import PageContainer from "../layouts/PageContainer.jsx";
 import { useAuth } from "../hooks/useAuth.js";
 import { formatDateTime } from "../utils/formatters.js";
+import { formatRelativeTime } from "../utils/formatRelativeTime.js";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -40,7 +41,9 @@ export default function Profile() {
                 </div>
                 <div className="profile-detail-row last">
                   <div className="profile-detail-label">Last Login Session</div>
-                  <div className="profile-detail-value">{formatDateTime(user?.last_login)}</div>
+                  <div className="profile-detail-value" title={formatDateTime(user?.last_login)}>
+                    {formatRelativeTime(user?.last_login)}
+                  </div>
                 </div>
               </div>
             </div>

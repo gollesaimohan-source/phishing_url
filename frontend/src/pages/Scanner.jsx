@@ -14,6 +14,7 @@ import {
   scanUrlAuthenticated,
 } from "../services/scanService.js";
 import { getStoredToken } from "../services/apiClient.js";
+import { useToast } from "../hooks/useToast.js";
 
 const SCAN_TYPES = [
   {
@@ -88,6 +89,7 @@ export default function Scanner() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [isScanning, setIsScanning] = useState(false);
+  const { showToast } = useToast();
 
   const activeType = useMemo(
     () => SCAN_TYPES.find((type) => type.id === activeTypeId) || SCAN_TYPES[0],
@@ -145,12 +147,14 @@ export default function Scanner() {
     if (activeTypeId === "image" || activeTypeId === "video") {
       if (!selectedFile) {
         setError(`Please upload a ${activeType.label.toLowerCase()} before scanning.`);
+        showToast(`Please upload a ${activeType.label.toLowerCase()} before scanning.`, "error");
         return;
       }
     } else {
       const value = inputs[activeTypeId]?.trim();
       if (!value) {
         setError(`Please enter ${activeType.inputLabel.toLowerCase()} to analyze.`);
+        showToast(`Please enter ${activeType.inputLabel.toLowerCase()} to analyze.`, "error");
         return;
       }
     }
@@ -175,6 +179,7 @@ export default function Scanner() {
       }
     } catch (requestError) {
       setError(requestError.message || "Scan failed. Please try again.");
+      showToast(requestError.message || "Scan failed. Please try again.", "error");
     } finally {
       setIsScanning(false);
     }

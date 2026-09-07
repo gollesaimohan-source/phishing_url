@@ -1,4 +1,5 @@
 import { formatDateTime } from "../utils/formatters.js";
+import { formatRelativeTime } from "../utils/formatRelativeTime.js";
 
 export default function ThreatIntelCard({ threatIntel, domainName }) {
   if (!threatIntel) return null;
@@ -61,11 +62,11 @@ export default function ThreatIntelCard({ threatIntel, domainName }) {
         <div className="threat-intel-details">
           <div>
             <span>First Seen</span>
-            <strong>{formatDateTime(firstSeen)}</strong>
+            <strong title={formatDateTime(firstSeen)}>{formatRelativeTime(firstSeen)}</strong>
           </div>
           <div>
             <span>Last Analyzed</span>
-            <strong>{formatDateTime(lastSeen)}</strong>
+            <strong title={formatDateTime(lastSeen)}>{formatRelativeTime(lastSeen)}</strong>
           </div>
         </div>
 

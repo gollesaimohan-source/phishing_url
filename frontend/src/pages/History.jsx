@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import PageContainer from "../layouts/PageContainer.jsx";
 import EmptyState from "../components/EmptyState.jsx";
-import LoadingSpinner from "../components/LoadingSpinner.jsx";
+import SkeletonCard from "../components/SkeletonCard.jsx";
 import ErrorAlert from "../components/ErrorAlert.jsx";
+import { useToast } from "../hooks/useToast.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import {
   deleteLocalHistory,
@@ -11,6 +12,7 @@ import {
   getScanHistory,
 } from "../services/scanService.js";
 import { formatDateTime } from "../utils/formatters.js";
+import { formatRelativeTime } from "../utils/formatRelativeTime.js";
 
 const CLASSIFICATION_OPTIONS = [
   "",
@@ -40,6 +42,8 @@ export default function History() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [deletingId, setDeletingId] = useState("");
+  const [deleteCandidate, setDeleteCandidate] = useState("");
+  const { showToast } = useToast();
 
   useEffect(() => {
     loadHistory({ page: pagination.page, search, classification });
@@ -109,8 +113,11 @@ export default function History() {
         items.length === 1 && pagination.page > 1 ? pagination.page - 1 : pagination.page;
       setPagination((current) => ({ ...current, page: nextPage }));
       await loadHistory({ page: nextPage, search, classification });
+      showToast("History entry deleted successfully.", "success");
     } catch (requestError) {
-      setError(requestError.message || "Failed to delete scan history entry.");
+      const message = requestError.message || "Failed to delete scan history entry.";
+      setError(message);
+      showToast(message, "error");
     } finally {
       setDeletingId("");
     }
@@ -189,11 +196,7 @@ export default function History() {
             <span className="section-badge">{formatCount(pagination.total)} results</span>
           </div>
 
-          {isLoading ? (
-            <div className="history-empty-state">
-              <LoadingSpinner message="Loading analytic history..." />
-            </div>
-          ) : null}
+          {isLoading ? <SkeletonCard className="skeleton-history" rows={6} /> : null}
 
           {!isLoading && items.length > 0 ? (
             <>
@@ -222,12 +225,14 @@ export default function History() {
                         <td>
                           <StatusBadge status={scan.classification || "Unknown"} />
                         </td>
-                        <td>{formatDateTime(scan.scan_date)}</td>
+                        <td title={formatDateTime(scan.scan_date)}>
+                          {formatRelativeTime(scan.scan_date)}
+                        </td>
                         <td>
                           <button
                             className="history-delete-button"
                             type="button"
-                            onClick={() => handleDelete(scan.scan_id)}
+                            onClick={() => setDeleteCandidate(scan.scan_id)}
                             disabled={deletingId === scan.scan_id}
                           >
                             {deletingId === scan.scan_id ? "Deleting..." : "Delete"}
@@ -255,6 +260,42 @@ export default function History() {
           ) : null}
         </section>
       </div>
+
+      {deleteCandidate ? (
+        <div className="modal fade show d-block" role="dialog" aria-modal="true" aria-labelledby="delete-scan-title">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content scamshield-confirm-modal">
+              <div className="modal-header">
+                <h5 className="modal-title" id="delete-scan-title">Delete scan record?</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  aria-label="Close"
+                  onClick={() => setDeleteCandidate("")}
+                />
+              </div>
+              <div className="modal-body">Delete this scan record? This cannot be undone.</div>
+              <div className="modal-footer">
+                <button className="btn-premium-secondary" type="button" onClick={() => setDeleteCandidate("")}>
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-danger"
+                  type="button"
+                  onClick={() => {
+                    const scanId = deleteCandidate;
+                    setDeleteCandidate("");
+                    handleDelete(scanId);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {deleteCandidate ? <div className="modal-backdrop fade show" onClick={() => setDeleteCandidate("")} /> : null}
     </PageContainer>
   );
 }
