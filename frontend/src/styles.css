@@ -2754,6 +2754,63 @@ a:focus-visible {
   max-width: 420px;
 }
 
+.scanner-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(100%, 560px);
+  min-height: 210px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.scanner-preview img,
+.scanner-preview video {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+}
+
+.scanner-preview-remove {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--surface-strong);
+  color: var(--text-primary);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+
+.scanner-preview-remove:hover {
+  border-color: var(--line-strong);
+  color: var(--brand);
+}
+
+.scanner-preview-caption {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-width: none !important;
+  overflow: hidden;
+  padding: 8px 48px 8px 12px;
+  background: var(--surface-strong);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .scanner-sample-button {
   display: inline-flex;
   align-items: center;

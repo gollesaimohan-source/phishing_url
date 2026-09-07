@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 export default function ScannerInput({
   activeType,
   value,
@@ -8,11 +10,43 @@ export default function ScannerInput({
   onLoadSample,
   onSubmit,
   onReset,
+  onClearFile,
 }) {
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewError, setPreviewError] = useState(false);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl("");
+      setPreviewError(false);
+      return undefined;
+    }
+
+    let objectUrl = "";
+    try {
+      objectUrl = URL.createObjectURL(selectedFile);
+      setPreviewUrl(objectUrl);
+      setPreviewError(false);
+    } catch {
+      setPreviewUrl("");
+      setPreviewError(true);
+    }
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedFile]);
+
   function handleFileChange(eventOrFile) {
     const file = eventOrFile?.target ? eventOrFile.target.files?.[0] : eventOrFile;
     if (file) {
       onFileChange({ target: { files: [file] } });
+    }
+
+    function clearSelectedFile(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      onClearFile();
     }
   }
 
@@ -81,15 +115,46 @@ export default function ScannerInput({
                 onChange={handleFileChange}
                 disabled={isScanning}
               />
-              <i className={`bi ${activeType.id === 'image' ? 'bi-cloud-upload' : 'bi-film'}`} />
-              <strong>
-                {selectedFile?.name || `Choose a ${activeType.label.toLowerCase()} file to upload`}
-              </strong>
-              <span>
-                {selectedFile
-                  ? `Ready to scan ${selectedFile.name}`
-                  : `Upload a ${activeType.label.toLowerCase()} and ScamShield will analyze it.`}
-              </span>
+              {selectedFile && previewUrl && !previewError ? (
+                <div className="scanner-preview" onClick={(event) => event.preventDefault()}>
+                  {activeType.id === "image" ? (
+                    <img
+                      src={previewUrl}
+                      alt={`Preview of ${selectedFile.name}`}
+                      onError={() => setPreviewError(true)}
+                    />
+                  ) : (
+                    <video
+                      src={previewUrl}
+                      muted
+                      controls
+                      preload="metadata"
+                      onError={() => setPreviewError(true)}
+                    />
+                  )}
+                  <button
+                    className="scanner-preview-remove"
+                    type="button"
+                    aria-label="Remove selected file"
+                    onClick={clearSelectedFile}
+                  >
+                    <i className="bi bi-x-lg" aria-hidden="true" />
+                  </button>
+                  <span className="scanner-preview-caption">{selectedFile.name}</span>
+                </div>
+              ) : (
+                <>
+                  <i className={`bi ${activeType.id === 'image' ? 'bi-cloud-upload' : 'bi-film'}`} />
+                  <strong>
+                    {selectedFile?.name || `Choose a ${activeType.label.toLowerCase()} file to upload`}
+                  </strong>
+                  <span>
+                    {selectedFile
+                      ? `Ready to scan ${selectedFile.name}`
+                      : `Upload a ${activeType.label.toLowerCase()} and ScamShield will analyze it.`}
+                  </span>
+                </>
+              )}
             </label>
           </div>
         ) : null}

@@ -240,6 +240,7 @@ export default function Scanner() {
             onChange={updateInput}
             onFileChange={handleFileChange}
             selectedFile={selectedFile}
+            onClearFile={() => setSelectedFile(null)}
             isScanning={isScanning}
             onLoadSample={loadSample}
             onSubmit={handleSubmit}
